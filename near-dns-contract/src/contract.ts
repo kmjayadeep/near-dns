@@ -9,7 +9,7 @@ type DomainRecord = {
 
 
 @NearBindgen({})
-class HelloNear {
+class NearDNS {
 
   private records = new UnorderedMap<DomainRecord>("v1");
 
@@ -38,5 +38,10 @@ class HelloNear {
   @view({})
   get_domain({domain}: {domain: string}): DomainRecord {
     return this.records.get(domain)
+  }
+
+  @view({})
+  get_all_domains(): [string, DomainRecord][] {
+    return this.records.toArray()
   }
 }

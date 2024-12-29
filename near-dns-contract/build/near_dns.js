@@ -3175,8 +3175,8 @@ function NearBindgen({
   };
 }
 
-var _dec, _dec2, _dec3, _class, _class2;
-let HelloNear = (_dec = NearBindgen({}), _dec2 = call({}), _dec3 = view(), _dec(_class = (_class2 = class HelloNear {
+var _dec, _dec2, _dec3, _dec4, _class, _class2;
+let NearDNS = (_dec = NearBindgen({}), _dec2 = call({}), _dec3 = view(), _dec4 = view(), _dec(_class = (_class2 = class NearDNS {
   records = new UnorderedMap("v1");
   static schema = {
     records: {
@@ -3206,34 +3206,50 @@ let HelloNear = (_dec = NearBindgen({}), _dec2 = call({}), _dec3 = view(), _dec(
   }) {
     return this.records.get(domain);
   }
-}, _applyDecoratedDescriptor(_class2.prototype, "register_domain", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "register_domain"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_domain", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "get_domain"), _class2.prototype), _class2)) || _class);
-function get_domain() {
-  const _state = HelloNear._getState();
-  if (!_state && HelloNear._requireInit()) {
+  get_all_domains() {
+    return this.records.toArray();
+  }
+}, _applyDecoratedDescriptor(_class2.prototype, "register_domain", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "register_domain"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_domain", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "get_domain"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_all_domains", [_dec4], Object.getOwnPropertyDescriptor(_class2.prototype, "get_all_domains"), _class2.prototype), _class2)) || _class);
+function get_all_domains() {
+  const _state = NearDNS._getState();
+  if (!_state && NearDNS._requireInit()) {
     throw new Error("Contract must be initialized");
   }
-  const _contract = HelloNear._create();
+  const _contract = NearDNS._create();
   if (_state) {
-    HelloNear._reconstruct(_contract, _state);
+    NearDNS._reconstruct(_contract, _state);
   }
-  const _args = HelloNear._getArgs();
+  const _args = NearDNS._getArgs();
+  const _result = _contract.get_all_domains(_args);
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(NearDNS._serialize(_result, true));
+}
+function get_domain() {
+  const _state = NearDNS._getState();
+  if (!_state && NearDNS._requireInit()) {
+    throw new Error("Contract must be initialized");
+  }
+  const _contract = NearDNS._create();
+  if (_state) {
+    NearDNS._reconstruct(_contract, _state);
+  }
+  const _args = NearDNS._getArgs();
   const _result = _contract.get_domain(_args);
-  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(HelloNear._serialize(_result, true));
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(NearDNS._serialize(_result, true));
 }
 function register_domain() {
-  const _state = HelloNear._getState();
-  if (!_state && HelloNear._requireInit()) {
+  const _state = NearDNS._getState();
+  if (!_state && NearDNS._requireInit()) {
     throw new Error("Contract must be initialized");
   }
-  const _contract = HelloNear._create();
+  const _contract = NearDNS._create();
   if (_state) {
-    HelloNear._reconstruct(_contract, _state);
+    NearDNS._reconstruct(_contract, _state);
   }
-  const _args = HelloNear._getArgs();
+  const _args = NearDNS._getArgs();
   const _result = _contract.register_domain(_args);
-  HelloNear._saveToStorage(_contract);
-  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(HelloNear._serialize(_result, true));
+  NearDNS._saveToStorage(_contract);
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(NearDNS._serialize(_result, true));
 }
 
-export { get_domain, register_domain };
-//# sourceMappingURL=hello_near.js.map
+export { get_all_domains, get_domain, register_domain };
+//# sourceMappingURL=near_dns.js.map

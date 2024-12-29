@@ -47,3 +47,17 @@ test('can register domains', async (t) => {
     AAAA: 'AAAA'
   });
 });
+
+test('return all domains', async (t) => {
+  const { root, contract } = t.context.accounts;
+  await root.call(contract, 'register_domain', { domain: 'abc', A: 'A', AAAA: 'AAAA' });
+  const records = await contract.view('get_all_domains');
+  t.is(records.length, 1)
+  t.is(records[0].length, 2)
+  t.is(records[0][0], "abc")
+  t.deepEqual(records[0][1], {
+    owner: 'test.near',
+    A: 'A',
+    AAAA: 'AAAA'
+  });
+});
