@@ -1,2 +1,2 @@
-DEFINE_NEAR_METHOD(get_greeting)
-DEFINE_NEAR_METHOD(set_greeting)
+DEFINE_NEAR_METHOD(get_domain)
+DEFINE_NEAR_METHOD(register_domain)

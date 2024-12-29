@@ -1,23 +1,42 @@
 // Find all our documentation at https://docs.near.org
-import { NearBindgen, near, call, view } from 'near-sdk-js';
+import { NearBindgen, near, call, view, UnorderedMap } from 'near-sdk-js';
+
+type DomainRecord = {
+  owner: string;
+  A: string; // Ipv4 target
+  AAAA: string // Ipv6 target
+};
+
 
 @NearBindgen({})
 class HelloNear {
 
+  private records = new UnorderedMap<DomainRecord>("v1");
+
   static schema = {
-    greeting: 'string'
+    records: {
+      class: UnorderedMap,
+      value: {
+        owner: 'string',
+        A: 'string',
+        AAAA: 'string'
+      }
+    }
   };
 
-  greeting: string = 'Hello';
-
-  @view({}) // This method is read-only and can be called for free
-  get_greeting(): string {
-    return this.greeting;
+  @call({})
+  register_domain({ domain, A, AAAA }: { domain: string, A: string, AAAA: string }): void {
+    near.log(`Saving domain ${domain}, ${A}, ${AAAA}`);
+    const owner = near.signerAccountId();
+    this.records.set(domain, {
+      owner,
+      A,
+      AAAA,
+    })
   }
-
-  @call({}) // This method changes the state, for which it cost gas
-  set_greeting({ greeting }: { greeting: string }): void {
-    near.log(`Saving greeting ${greeting}`);
-    this.greeting = greeting;
+  
+  @view({})
+  get_domain({domain}: {domain: string}): DomainRecord {
+    return this.records.get(domain)
   }
 }
