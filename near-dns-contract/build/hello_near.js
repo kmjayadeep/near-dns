@@ -3177,7 +3177,7 @@ function NearBindgen({
 
 var _dec, _dec2, _dec3, _class, _class2;
 let HelloNear = (_dec = NearBindgen({}), _dec2 = call({}), _dec3 = view(), _dec(_class = (_class2 = class HelloNear {
-  records = new UnorderedMap("rec-");
+  records = new UnorderedMap("v1");
   static schema = {
     records: {
       class: UnorderedMap,

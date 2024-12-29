@@ -31,15 +31,19 @@ test.afterEach.always(async (t) => {
   });
 });
 
-test('returns the default greeting', async (t) => {
+test('returns empty when no record exist for the record', async (t) => {
   const { contract } = t.context.accounts;
-  const greeting = await contract.view('get_greeting', {});
-  t.is(greeting, 'Hello');
+  const record = await contract.view('get_domain', {domain: 'example'});
+  t.falsy(record);
 });
 
-test('changes the greeting', async (t) => {
+test('can register domains', async (t) => {
   const { root, contract } = t.context.accounts;
-  await root.call(contract, 'set_greeting', { greeting: 'Howdy' });
-  const greeting = await contract.view('get_greeting', {});
-  t.is(greeting, 'Howdy');
+  await root.call(contract, 'register_domain', { domain: 'abc', A: 'A', AAAA: 'AAAA' });
+  const record = await contract.view('get_domain', {domain: 'abc'});
+  t.deepEqual(record, {
+    owner: 'test.near',
+    A: 'A',
+    AAAA: 'AAAA'
+  });
 });
