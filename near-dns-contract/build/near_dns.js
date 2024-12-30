@@ -3175,8 +3175,8 @@ function NearBindgen({
   };
 }
 
-var _dec, _dec2, _dec3, _dec4, _class, _class2;
-let NearDNS = (_dec = NearBindgen({}), _dec2 = call({}), _dec3 = view(), _dec4 = view(), _dec(_class = (_class2 = class NearDNS {
+var _dec, _dec2, _dec3, _dec4, _dec5, _class, _class2;
+let NearDNS = (_dec = NearBindgen({}), _dec2 = call({}), _dec3 = call({}), _dec4 = view(), _dec5 = view(), _dec(_class = (_class2 = class NearDNS {
   records = new UnorderedMap("v1");
   static schema = {
     records: {
@@ -3195,11 +3195,26 @@ let NearDNS = (_dec = NearBindgen({}), _dec2 = call({}), _dec3 = view(), _dec4 =
   }) {
     log(`Saving domain ${domain}, ${A}, ${AAAA}`);
     const owner = signerAccountId();
+    const existing = this.records.get(domain);
+    if (existing && existing.owner != owner) {
+      throw new Error("only owner can update the domain");
+    }
     this.records.set(domain, {
       owner,
       A,
       AAAA
     });
+  }
+  delete_domain({
+    domain
+  }) {
+    log(`Deleting domain ${domain}`);
+    const owner = signerAccountId();
+    const record = this.records.get(domain);
+    if (record.owner != owner) {
+      throw new Error("only owner can delete the domain");
+    }
+    this.records.remove(domain);
   }
   get_domain({
     domain
@@ -3209,7 +3224,7 @@ let NearDNS = (_dec = NearBindgen({}), _dec2 = call({}), _dec3 = view(), _dec4 =
   get_all_domains() {
     return this.records.toArray();
   }
-}, _applyDecoratedDescriptor(_class2.prototype, "register_domain", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "register_domain"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_domain", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "get_domain"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_all_domains", [_dec4], Object.getOwnPropertyDescriptor(_class2.prototype, "get_all_domains"), _class2.prototype), _class2)) || _class);
+}, _applyDecoratedDescriptor(_class2.prototype, "register_domain", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "register_domain"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "delete_domain", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "delete_domain"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_domain", [_dec4], Object.getOwnPropertyDescriptor(_class2.prototype, "get_domain"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_all_domains", [_dec5], Object.getOwnPropertyDescriptor(_class2.prototype, "get_all_domains"), _class2.prototype), _class2)) || _class);
 function get_all_domains() {
   const _state = NearDNS._getState();
   if (!_state && NearDNS._requireInit()) {
@@ -3236,6 +3251,20 @@ function get_domain() {
   const _result = _contract.get_domain(_args);
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(NearDNS._serialize(_result, true));
 }
+function delete_domain() {
+  const _state = NearDNS._getState();
+  if (!_state && NearDNS._requireInit()) {
+    throw new Error("Contract must be initialized");
+  }
+  const _contract = NearDNS._create();
+  if (_state) {
+    NearDNS._reconstruct(_contract, _state);
+  }
+  const _args = NearDNS._getArgs();
+  const _result = _contract.delete_domain(_args);
+  NearDNS._saveToStorage(_contract);
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(NearDNS._serialize(_result, true));
+}
 function register_domain() {
   const _state = NearDNS._getState();
   if (!_state && NearDNS._requireInit()) {
@@ -3251,5 +3280,5 @@ function register_domain() {
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(NearDNS._serialize(_result, true));
 }
 
-export { get_all_domains, get_domain, register_domain };
+export { delete_domain, get_all_domains, get_domain, register_domain };
 //# sourceMappingURL=near_dns.js.map

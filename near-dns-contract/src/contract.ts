@@ -28,12 +28,32 @@ class NearDNS {
   register_domain({ domain, A, AAAA }: { domain: string, A: string, AAAA: string }): void {
     near.log(`Saving domain ${domain}, ${A}, ${AAAA}`);
     const owner = near.signerAccountId();
+
+    const existing = this.records.get(domain)
+    if(existing && existing.owner != owner) {
+      throw new Error("only owner can update the domain")
+    }
+
     this.records.set(domain, {
       owner,
       A,
       AAAA,
     })
   }
+
+  @call({})
+  delete_domain({ domain }: { domain: string }): void {
+    near.log(`Deleting domain ${domain}`);
+    const owner = near.signerAccountId();
+
+    const record = this.records.get(domain);
+    if(record.owner != owner){ 
+      throw new Error("only owner can delete the domain")
+    }
+
+    this.records.remove(domain)
+  }
+  
   
   @view({})
   get_domain({domain}: {domain: string}): DomainRecord {

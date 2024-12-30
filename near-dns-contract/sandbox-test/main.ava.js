@@ -14,6 +14,7 @@ test.beforeEach(async t => {
 
   // Deploy contract
   const root = worker.rootAccount;
+  const secondAccount = await root.createSubAccount('second')
   const contract = await root.createSubAccount('test-account');
 
   // Get wasm file path from package.json test script in folder above
@@ -22,7 +23,7 @@ test.beforeEach(async t => {
   );
 
   // Save state for test runs, it is unique for each test
-  t.context.accounts = { root, contract };
+  t.context.accounts = { root, contract, secondAccount };
 });
 
 test.afterEach.always(async (t) => {
@@ -46,6 +47,66 @@ test('can register domains', async (t) => {
     A: 'A',
     AAAA: 'AAAA'
   });
+});
+
+test('can update domains', async (t) => {
+  const { root, contract } = t.context.accounts;
+  await root.call(contract, 'register_domain', { domain: 'abc', A: 'A', AAAA: 'AAAA' });
+  const record = await contract.view('get_domain', {domain: 'abc'});
+  t.deepEqual(record, {
+    owner: 'test.near',
+    A: 'A',
+    AAAA: 'AAAA'
+  });
+  ``
+  await root.call(contract, 'register_domain', { domain: 'abc', A: 'A2', AAAA: 'AAAA2' });
+  const record2 = await contract.view('get_domain', {domain: 'abc'});
+  t.deepEqual(record2, {
+    owner: 'test.near',
+    A: 'A2',
+    AAAA: 'AAAA2'
+  });
+});
+
+test('only owner can update domains', async (t) => {
+  const { root, contract, secondAccount } = t.context.accounts;
+  await root.call(contract, 'register_domain', { domain: 'abc', A: 'A', AAAA: 'AAAA' });
+  const record = await contract.view('get_domain', {domain: 'abc'});
+  t.deepEqual(record, {
+    owner: 'test.near',
+    A: 'A',
+    AAAA: 'AAAA'
+  });
+
+  const promise = secondAccount.call(contract, 'register_domain', { domain: 'abc', A: 'A2', AAAA: 'AAAA2' });
+  await t.throwsAsync(promise);
+});
+
+test('owner can delete domains', async (t) => {
+  const { root, contract } = t.context.accounts;
+  await root.call(contract, 'register_domain', { domain: 'abc', A: 'A', AAAA: 'AAAA' });
+  const record = await contract.view('get_domain', {domain: 'abc'});
+  t.deepEqual(record, {
+    owner: 'test.near',
+    A: 'A',
+    AAAA: 'AAAA'
+  });
+  await root.call(contract, 'delete_domain', { domain: 'abc'});
+  const record2 = await contract.view('get_domain', {domain: 'example'});
+  t.falsy(record2);
+});
+
+test('only owner can delete domains', async (t) => {
+  const { root, contract, secondAccount } = t.context.accounts;
+  await root.call(contract, 'register_domain', { domain: 'abc', A: 'A', AAAA: 'AAAA' });
+  const record = await contract.view('get_domain', {domain: 'abc'});
+  t.deepEqual(record, {
+    owner: 'test.near',
+    A: 'A',
+    AAAA: 'AAAA'
+  });
+  const promise = secondAccount.call(contract, 'delete_domain', { domain: 'abc'});
+  await t.throwsAsync(promise);
 });
 
 test('return all domains', async (t) => {
