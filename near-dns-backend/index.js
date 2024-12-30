@@ -1,6 +1,6 @@
 import nearAPI from "near-api-js";
 
-const DUCKDNS_TOKEN = process.env["DUCKDNS_TOKEN"];
+const ADGUARD_PASSWORD = process.env["ADGUARD_PASSWORD"];
 
 const { connect, keyStores } = nearAPI;
 
@@ -36,27 +36,95 @@ try {
 
 
 async function processRecords(records) {
+    const existing = await listRecords()
+
     for(let i=0;i<records.length; i++){
-        const record = records[0]
-        const domain = record[0]
+        const record = records[i]
+        const domain = `${record[0]}.local`
         const { A, AAAA } = record[1]
-        await updateRecord(domain, A, AAAA)
+
+        if(!existing[domain]) {
+            await addRecord(domain, A, AAAA)
+        }else{
+            if(existing[domain].answer != A ) {
+                await updateRecord(existing[domain], domain, A, AAAA)
+            }
+        }
+
     }
 }
 
-async function updateRecord(domain, A, AAAA) {
-    const url = `https://www.duckdns.org/update?domains=${domain}&token=${DUCKDNS_TOKEN}&ip=${A}&ipv6=${AAAA}&verbose=true`;
+async function listRecords() {
+    console.log('listing domains')
+    const url = `http://gatekeeper.cosmos.cboxlab.com/control/rewrite/list`;
+    const basicAuth = btoa(`admin:${ADGUARD_PASSWORD}`);
 
-    (async () => {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            const data = await response.text();
-            console.log("Response data:", data);
-        } catch (error) {
-            console.error("Error:", error.message);
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`
         }
-    })();
+    });
+    
+    const body = await response.json()
+    console.log(`got ${body.length} domains`)
+    const records = new Map()
+
+    for (const r of body) {
+        records[r.domain] = r
+    }
+
+    return records
+}
+
+async function addRecord(domain, A, AAAA) {
+    console.log(`adding ${domain} with ${A}`)
+    const url = `http://gatekeeper.cosmos.cboxlab.com/control/rewrite/add`;
+    const basicAuth = btoa(`admin:${ADGUARD_PASSWORD}`);
+
+
+    const rewriteRule = {
+        domain,
+        answer: A,
+    };
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`
+        },
+        body: JSON.stringify(rewriteRule)
+    });
+    if(response.ok) {
+        console.log("added successfully")
+    }
+}
+
+async function updateRecord(record, domain, A, AAAA) {
+    console.log(`updating ${record} with ${A}`)
+    const url = `http://gatekeeper.cosmos.cboxlab.com/control/rewrite/update`;
+    const basicAuth = btoa(`admin:${ADGUARD_PASSWORD}`);
+
+    const payload = {
+        target: record,
+        update: {
+            domain,
+            answer: A,
+        }
+    }
+
+    const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`
+        },
+        body: JSON.stringify(payload)
+    });
+    if(response.ok) {
+        console.log("updated successfully")
+    }
 }
