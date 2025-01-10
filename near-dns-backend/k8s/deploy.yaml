@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: near-dns-backend
+  labels:
+    app: near-dns-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: near-dns-backend
+  template:
+    metadata:
+      labels:
+        app: near-dns-backend
+    spec:
+      containers:
+        - name: near-dns-backend
+          image: ghcr.io/kmjayadeep/near-dns/near-dns-backend:latest
+          imagePullPolicy: Always
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: ADGUARD_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: near-dns-secret
+                  key: adguard_password
