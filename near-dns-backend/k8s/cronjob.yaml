@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: near-dns-backend
+spec:
+  schedule: "*/2 * * * *" # Runs every 2 minutes
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: near-dns-backend
+              image: ghcr.io/kmjayadeep/near-dns-backend:latest
+              imagePullPolicy: Always
+              env:
+                - name: NODE_ENV
+                  value: "production" # Example environment variable
+                - name: ADGUARD_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: near-dns-secret
+                      key: adguard_password
+          restartPolicy: Never
+

@@ -23,20 +23,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build the Docker image with multiple tags
-      - name: Build Docker image with latest and timestamp tags
+      # Build the Docker image
+      - name: Build Docker image
         run: |
           IMAGE_NAME=ghcr.io/${{ github.repository }}/near-dns-backend
-          TIMESTAMP=$(date +%s)
-          
-          # Build with both tags
-          docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:$TIMESTAMP near-dns-backend/
+          docker build -t $IMAGE_NAME:latest near-dns-backend/
 
       # Push the Docker image with multiple tags
       - name: Push Docker image with multiple tags
         run: |
           IMAGE_NAME=ghcr.io/${{ github.repository }}/near-dns-backend
-          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          TIMESTAMP=$(date +%s)
+
+          docker tag $IMAGE_NAME:latest $IMAGE_NAME:$TIMESTAMP
           
           # Push both tags
           docker push $IMAGE_NAME:latest
