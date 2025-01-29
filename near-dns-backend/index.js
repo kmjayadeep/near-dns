@@ -8,7 +8,7 @@ const { connect, keyStores } = nearAPI;
 const connectionConfig = {
   networkId: "testnet",
   keyStore: new keyStores.InMemoryKeyStore(),
-  nodeUrl: "https://rpc.testnet.near.org",
+  nodeUrl: "https://test.rpc.fastnear.com",
   walletUrl: "https://testnet.mynearwallet.com/",
   helperUrl: "https://helper.testnet.near.org",
   explorerUrl: "https://testnet.nearblocks.io",
