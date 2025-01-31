@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: near-dns-backend
-          image: ghcr.io/kmjayadeep/near-dns/near-dns-backend:latest
+          image: ghcr.io/kmjayadeep/near-dns/near-dns-backend:1738260824
           imagePullPolicy: Always
           env:
             - name: NODE_ENV
