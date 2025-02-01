@@ -130,3 +130,6 @@ dist
 .pnp.*
 
 secret-decrypted.yaml
+
+# Rust output
+target/
