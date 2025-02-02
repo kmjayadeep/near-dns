@@ -1,6 +1,6 @@
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::{log, near, env};
 use near_sdk::store::IterableMap;
+use near_sdk::{env, log, near};
 
 #[derive(BorshDeserialize, BorshSerialize)]
 #[near(serializers = [json])]
@@ -46,15 +46,11 @@ impl Contract {
         self.greeting = greeting;
     }
 
-    // Public method - registers a domain with an owner and an A/AAAA record 
+    // Public method - registers a domain with an owner and an A/AAAA record
     pub fn register_domain(&mut self, domain: String, a: String, aaaa: String) {
         log!("Registering domain: {domain} with A: {a} and AAAA: {aaaa}");
         let owner = env::signer_account_id().to_string();
-        self.records.insert(domain, DNSRecord {
-            owner,
-            a,
-            aaaa,
-        });
+        self.records.insert(domain, DNSRecord { owner, a, aaaa });
     }
 }
 
