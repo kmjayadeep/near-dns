@@ -33,6 +33,8 @@ async fn test_domain_registration() -> anyhow::Result<()> {
     let domain = result.json::<DNSRecord>()?;
 
     assert_eq!(domain.owner, user_account.id().to_string());
+    assert_eq!(domain.a, "192.168.1.1");
+    assert_eq!(domain.aaaa, "::1");
 
     Ok(())
 }
