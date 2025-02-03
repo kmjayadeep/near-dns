@@ -1,5 +1,6 @@
 use near_workspaces::{network::Sandbox, Contract, Worker};
 use serde_json::json;
+use near_dns::DNSRecord; 
 
 async fn init() -> anyhow::Result<(Worker<Sandbox>, Contract)> {
     let worker = near_workspaces::sandbox().await?;
@@ -24,11 +25,14 @@ async fn test_domain_registration() -> anyhow::Result<()> {
         .await?;
     assert!(outcome.is_success());
 
-    let user_message_outcome = contract
+    let result = contract
         .view("get_domain")
         .args_json(json!({"domain":"router"}))
         .await?;
-    assert_eq!(user_message_outcome.json::<String>()?, "Hello World!");
+
+    let domain = result.json::<DNSRecord>()?;
+
+    assert_eq!(domain.owner, user_account.id().to_string());
 
     Ok(())
 }
