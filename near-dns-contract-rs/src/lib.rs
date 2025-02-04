@@ -13,7 +13,6 @@ pub struct DNSRecord {
 // Define the contract structure
 #[near(contract_state)]
 pub struct Contract {
-    greeting: String,
     records: IterableMap<String, DNSRecord>,
 }
 
@@ -21,7 +20,6 @@ pub struct Contract {
 impl Default for Contract {
     fn default() -> Self {
         Self {
-            greeting: "Hello".to_string(),
             records: IterableMap::new(b"m"),
         }
     }
@@ -30,26 +28,20 @@ impl Default for Contract {
 // Implement the contract structure
 #[near]
 impl Contract {
-    // Public method - returns the greeting saved, defaulting to DEFAULT_GREETING
-    pub fn get_greeting(&self) -> String {
-        self.greeting.clone()
-    }
-
     // Public method - returns the DNSRecord given the domain name
     pub fn get_domain(&self, domain: String) -> Option<&DNSRecord> {
         self.records.get(&domain)
     }
 
-    // Public method - accepts a greeting, such as "howdy", and records it
-    pub fn set_greeting(&mut self, greeting: String) {
-        log!("Saving greeting: {greeting}");
-        self.greeting = greeting;
+    // Public method - returns all DNSRecords
+    pub fn get_all_domains(&self) -> Vec<(String, &DNSRecord)> {
+        self.records.iter().map(|(k, v)| (k.clone(), v)).collect()
     }
 
     // Public method - registers a domain with an owner and an A/AAAA record
     pub fn register_domain(&mut self, domain: String, a: String, aaaa: String) {
-        log!("Registering domain: {domain} with A: {a} and AAAA: {aaaa}");
         let owner = env::signer_account_id().to_string();
+        log!("Registering domain: {domain} with A: {a} and AAAA: {aaaa} for owner: {owner}");
 
         let existing = self.records.get(&domain);
 
@@ -58,6 +50,19 @@ impl Contract {
         }
 
         self.records.insert(domain, DNSRecord { owner, a, aaaa });
+    }
+
+    // Public method - deletes a domain record
+    pub fn delete_domain(&mut self, domain: String) {
+        log!("Deleting domain: {domain}");
+
+        let existing = self.records.get(&domain);
+
+        if existing.is_none() || existing.unwrap().owner != env::signer_account_id() {
+            env::panic_str("Invalid domain or wrong owner");
+        }
+
+        self.records.remove(&domain);
     }
 }
 
@@ -70,16 +75,51 @@ mod tests {
     use super::*;
 
     #[test]
-    fn get_default_greeting() {
-        let contract = Contract::default();
-        // this test did not call set_greeting so should return the default "Hello" greeting
-        assert_eq!(contract.get_greeting(), "Hello");
+    fn set_then_get_domain() {
+        let mut contract = Contract::default();
+
+        let domain = "example".to_string();
+        let a = "a".to_string();
+        let aaaa = "aaaa".to_string();
+
+        contract.register_domain(domain, a, aaaa);
+
+        let result = contract.get_domain("example".to_string());
+        assert_eq!(result.unwrap().a, "a".to_string());
+        assert_eq!(result.unwrap().aaaa, "aaaa".to_string());
     }
 
     #[test]
-    fn set_then_get_greeting() {
+    fn delete_domain() {
         let mut contract = Contract::default();
-        contract.set_greeting("howdy".to_string());
-        assert_eq!(contract.get_greeting(), "howdy");
+
+        let domain = "example".to_string();
+        let a = "a".to_string();
+        let aaaa = "aaaa".to_string();
+
+        contract.register_domain(domain, a, aaaa);
+
+        contract.delete_domain("example".to_string());
+
+        let result = contract.get_domain("example".to_string());
+        assert_eq!(result.is_none(), true);
+    }
+
+    #[test]
+    fn get_all_domains() {
+        let mut contract = Contract::default();
+
+        let domain = "example".to_string();
+        let a = "a".to_string();
+        let aaaa = "aaaa".to_string();
+
+        contract.register_domain(domain, a, aaaa);
+
+        let result = contract.get_all_domains();
+        result.iter().for_each(|(k, v)| {
+            assert_eq!(*k, "example".to_string());
+            assert_eq!(v.a, "a".to_string());
+            assert_eq!(v.aaaa, "aaaa".to_string());
+        });
     }
 }
