@@ -50,6 +50,13 @@ impl Contract {
     pub fn register_domain(&mut self, domain: String, a: String, aaaa: String) {
         log!("Registering domain: {domain} with A: {a} and AAAA: {aaaa}");
         let owner = env::signer_account_id().to_string();
+
+        let existing = self.records.get(&domain);
+
+        if existing.is_some() && existing.unwrap().owner != env::signer_account_id() {
+            env::panic_str("Only owner can update the domain");
+        }
+
         self.records.insert(domain, DNSRecord { owner, a, aaaa });
     }
 }
