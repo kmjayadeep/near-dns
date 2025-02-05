@@ -46,3 +46,39 @@ async fn test_domain_registration() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[tokio::test]
+async fn test_domain_deletion() -> anyhow::Result<()> {
+    let (worker, contract) = init().await?;
+
+    let user_account = worker.dev_create_account().await?;
+    let user_account2 = worker.dev_create_account().await?;
+
+    // Register a domain
+    let outcome = user_account
+        .call(contract.id(), "register_domain")
+        .args_json(json!({"domain": "router", "a": "192.168.1.1", "aaaa": "::1"}))
+        .transact()
+        .await?;
+    assert!(outcome.is_success());
+
+
+    // Try deleting the domain with a different user
+    let result = user_account2
+        .call(contract.id(),"delete_domain")
+        .args_json(json!({"domain":"router"}))
+        .transact()
+        .await?;
+    assert!(result.is_failure());
+
+
+    // Delete the domain with the correct user
+    let result2 = user_account
+        .call(contract.id(), "delete_domain")
+        .args_json(json!({"domain": "router"}))
+        .transact()
+        .await?;
+    assert!(result2.is_success());
+
+    Ok(())
+}
