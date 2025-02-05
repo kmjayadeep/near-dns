@@ -2,7 +2,7 @@ use near_api::{AccountId, Contract, Data, NetworkConfig};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::{clone, collections::HashMap, result};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct DNSRecord {
@@ -85,6 +85,41 @@ async fn add_record(domain: String, answer: String) -> Result<(), reqwest::Error
     Ok(())
 }
 
+async fn update_record(
+    domain: String,
+    existing: String,
+    answer: String,
+) -> Result<(), reqwest::Error> {
+    println!("Updating record for {}, answer {}", domain, answer);
+    let url = "http://gatekeeper.cosmos.cboxlab.com/control/rewrite/update";
+    let adguard_password =
+        std::env::var("ADGUARD_PASSWORD").expect("Missing ADGUARD_PASSWORD env var");
+
+    let payload = json!({
+        "target": {
+            "domain": domain,
+            "answer": existing,
+        },
+        "update": {
+            "domain": domain,
+            "answer": answer,
+        }
+    });
+
+    println!("Payload: {}", payload);
+
+    let client = Client::new();
+    let _response = client
+        .put(url)
+        .header("Content-Type", "application/json")
+        .basic_auth("admin", Option::from(adguard_password))
+        .json(&payload)
+        .send()
+        .await?;
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
     let domains = get_all_domains().await.unwrap();
@@ -100,16 +135,23 @@ async fn main() {
 
     // Update the DNS records
     for (n, record) in domains {
+        let answer = if !record.a.is_empty() {
+            record.a.clone()
+        } else {
+            record.aaaa.clone()
+        };
         let name = n + ".local";
         if existing.contains_key(&name) {
-            println!("Updating record for {}", name.clone());
+            if existing.get(&name).unwrap() == &answer {
+                println!("Record for {} is up to date", name);
+                continue;
+            }
+            let result =
+                update_record(name.clone(), existing.get(&name).unwrap().clone(), answer).await;
+            if result.is_err() {
+                println!("Failed to update record for {}", name);
+            }
         } else {
-            println!("Creating record for {}", name);
-            let answer = if !record.a.is_empty() {
-                record.a.clone()
-            } else {
-                record.aaaa.clone()
-            };
             let result = add_record(name.clone(), answer).await;
             if result.is_err() {
                 println!("Failed to add record for {}", name);
