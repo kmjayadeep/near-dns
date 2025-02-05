@@ -1,43 +1,40 @@
+use near_api::{AccountId, Contract, Data, NetworkConfig};
 use serde::{Deserialize, Serialize};
-use near_api::{AccountId, Contract, NetworkConfig, Data};
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Domain {
+struct DNSRecord {
     owner: AccountId,
-    A: String,
-    AAAA: String,
+    a: String,
+    aaaa: String,
 }
 
-async fn get_all_domains() -> Result<String, Box<dyn std::error::Error>> {
+async fn get_all_domains() -> Result<Vec<(String, DNSRecord)>, Box<dyn std::error::Error>> {
     let network = NetworkConfig::testnet();
 
-    let contract_id: AccountId = "near-dns-test2.testnet".parse().unwrap();
+    let contract_id: AccountId = "near-dns-test3.testnet".parse().unwrap();
 
     // Load the contract
     let contract = Contract(contract_id.clone());
 
-    let result : Data<String> = contract
-    .call_function("get_all_domains", ())
-    .unwrap()
-    .read_only()
-    .fetch_from(&network)
-    .await
-    .unwrap();
+    let result: Data<Vec<(String, DNSRecord)>> = contract
+        .call_function("get_all_domains", ())
+        .unwrap()
+        .read_only()
+        .fetch_from(&network)
+        .await
+        .unwrap();
 
-    let raw_result = serde_json::to_string(&result).unwrap();
-    println!("{}", raw_result);
-
-    Ok(String::from("ok"))
+    Ok(result.data)
 }
 
 #[tokio::main]
 async fn main() {
     match get_all_domains().await {
-        Ok(_domains) => {
+        Ok(domains) => {
             println!("Domains:");
-            // for domain in domains {
-            //     println!("- Name: {}, Owner: {}", domain.A, domain.owner);
-            // }
+            for (name, record) in domains {
+                println!("- Name: {}, A: {}, AAAA: {}", name, record.a, record.aaaa);
+            }
         }
         Err(err) => {
             eprintln!("Error fetching domains: {}", err);
