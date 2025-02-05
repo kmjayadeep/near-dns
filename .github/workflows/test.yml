@@ -6,6 +6,10 @@ jobs:
   code-formatting:
     name: Code Formatting
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./near-dns-contract-rs
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -14,6 +18,10 @@ jobs:
   code-linter:
     name: Code Linter
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./near-dns-contract-rs
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,6 +33,10 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./near-dns-contract-rs
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
