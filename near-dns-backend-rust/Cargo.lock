@@ -1508,6 +1508,7 @@ name = "near-dns-backend-rust"
 version = "0.1.0"
 dependencies = [
  "near-api",
+ "reqwest",
  "serde",
  "serde_json",
  "tokio",
