@@ -122,6 +122,7 @@ async fn update_record(
 
 #[tokio::main]
 async fn main() {
+    println!("Starting Near-DNS Backend");
     let domains = get_all_domains().await.unwrap();
     println!("Domains:");
     for (name, record) in domains.clone() {
