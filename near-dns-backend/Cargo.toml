@@ -1,5 +1,5 @@
 [package]
-name = "near-dns-backend-rust"
+name = "near-dns-backend"
 version = "0.1.0"
 edition = "2021"
 
