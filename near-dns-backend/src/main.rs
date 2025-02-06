@@ -120,9 +120,7 @@ async fn update_record(
     Ok(())
 }
 
-#[tokio::main]
-async fn main() {
-    println!("Starting Near-DNS Backend");
+async fn run() {
     let domains = get_all_domains().await.unwrap();
     println!("Domains:");
     for (name, record) in domains.clone() {
@@ -158,5 +156,14 @@ async fn main() {
                 println!("Failed to add record for {}", name);
             }
         }
+    }
+}
+
+#[tokio::main]
+async fn main() {
+    println!("Starting Near-DNS Backend");
+    loop {
+        run().await;
+        tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
     }
 }
