@@ -25,8 +25,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Run cargo build
-        run: cargo build
+      - name: Install cargo-near CLI
+        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/download/cargo-near-v0.13.2/cargo-near-installer.sh | sh
+      - name: Run cargo near build
+        run: cargo near build non-reproducible-wasm
       - name: Run cargo clippy
         run: |
           rustup component add clippy
@@ -42,7 +44,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Run cargo build
-        run: cargo build
+      - name: Install cargo-near CLI
+        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/download/cargo-near-v0.13.2/cargo-near-installer.sh | sh
+      - name: Run cargo near build
+        run: cargo near build non-reproducible-wasm
       - name: Run cargo test
         run: cargo test
