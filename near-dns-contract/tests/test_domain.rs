@@ -62,15 +62,13 @@ async fn test_domain_deletion() -> anyhow::Result<()> {
         .await?;
     assert!(outcome.is_success());
 
-
     // Try deleting the domain with a different user
     let result = user_account2
-        .call(contract.id(),"delete_domain")
+        .call(contract.id(), "delete_domain")
         .args_json(json!({"domain":"router"}))
         .transact()
         .await?;
     assert!(result.is_failure());
-
 
     // Delete the domain with the correct user
     let result2 = user_account
