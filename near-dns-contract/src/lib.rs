@@ -102,7 +102,7 @@ mod tests {
         contract.delete_domain("example".to_string());
 
         let result = contract.get_domain("example".to_string());
-        assert_eq!(result.is_none(), true);
+        assert!(result.is_none());
     }
 
     #[test]

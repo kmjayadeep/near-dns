@@ -8,6 +8,10 @@ jobs:
 
   deploy-staging:
     name: Deploy to staging subaccount
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./near-dns-contract
     permissions:
       pull-requests: write
     needs: [test]
