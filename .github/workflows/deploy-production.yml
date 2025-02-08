@@ -11,6 +11,10 @@ jobs:
     name: Deploy to production
     needs: [test]
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./near-dns-contract
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
