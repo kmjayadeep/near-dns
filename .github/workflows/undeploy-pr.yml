@@ -2,10 +2,14 @@ name: Undeploy PR from Staging
 on:
   pull_request:
     types: [closed]
+    paths:
+      - 'near-dns-contract/**'
+      - '.github/workflows/deploy-pr.yml'
+      - '.github/workflows/test.yml'
 
 jobs:
   cleanup-staging:
-    name: Cleanup staging account
+    name: Cleanup staging PR subaccount
     runs-on: ubuntu-latest
     env:
       NEAR_CONTRACT_PR_STAGING_ACCOUNT_ID: gh-${{ github.event.number }}.${{ vars.NEAR_CONTRACT_STAGING_ACCOUNT_ID }}

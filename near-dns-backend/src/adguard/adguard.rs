@@ -1,10 +1,9 @@
 use crate::DNSRecord;
 use reqwest::Client;
 use serde_json::json;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 async fn list_records() -> Result<HashMap<String, String>, reqwest::Error> {
-    println!("Listing domains");
     let url = "http://gatekeeper.cosmos.cboxlab.com/control/rewrite/list";
     let adguard_password =
         std::env::var("ADGUARD_PASSWORD").expect("Missing ADGUARD_PASSWORD env var");
@@ -18,7 +17,6 @@ async fn list_records() -> Result<HashMap<String, String>, reqwest::Error> {
         .await?;
 
     let body: Vec<HashMap<String, String>> = response.json().await?;
-    println!("Got {} domains", body.len());
 
     let mut records = HashMap::new();
     for r in body {
@@ -93,12 +91,37 @@ async fn update_record(
     Ok(())
 }
 
+async fn delete_record(domain: String, answer: String) -> Result<(), reqwest::Error> {
+    println!("Deleting record for {}, answer {}", domain, answer);
+    let url = "http://gatekeeper.cosmos.cboxlab.com/control/rewrite/delete";
+    let adguard_password =
+        std::env::var("ADGUARD_PASSWORD").expect("Missing ADGUARD_PASSWORD env var");
+
+    let payload = json!({
+        "domain": domain,
+        "answer": answer,
+    });
+
+    let client = Client::new();
+    let _response = client
+        .post(url)
+        .header("Content-Type", "application/json")
+        .basic_auth("admin", Option::from(adguard_password))
+        .json(&payload)
+        .send()
+        .await?;
+
+    Ok(())
+}
+
 pub async fn reconcile(domains: Vec<(String, DNSRecord)>) {
     println!("Domains in Adguard:");
     let existing = list_records().await.unwrap();
     for (name, record) in existing.clone() {
         println!("- Name: {}, Record: {}", name, record);
     }
+
+    let mut domain_set: HashSet<String> = HashSet::new();
 
     // Update the DNS records
     for (n, record) in domains {
@@ -108,9 +131,9 @@ pub async fn reconcile(domains: Vec<(String, DNSRecord)>) {
             record.aaaa.clone()
         };
         let name = n + ".local";
+        domain_set.insert(name.clone());
         if existing.contains_key(&name) {
             if existing.get(&name).unwrap() == &answer {
-                println!("Record for {} is up to date", name);
                 continue;
             }
             let result =
@@ -122,6 +145,15 @@ pub async fn reconcile(domains: Vec<(String, DNSRecord)>) {
             let result = add_record(name.clone(), answer).await;
             if result.is_err() {
                 println!("Failed to add record for {}", name);
+            }
+        }
+    }
+
+    for (name, answer) in existing {
+        if !domain_set.contains(&name) {
+            let result = delete_record(name.clone(), answer).await;
+            if result.is_err() {
+                println!("Failed to delete record for {}", name);
             }
         }
     }
