@@ -4,7 +4,9 @@ on:
   push:
     branches:
       - main 
-  workflow_dispatch:
+    paths:
+      - 'near-dns-backend/**'
+      - '.github/workflows/build-backend.yml'
 
 jobs:
   build-and-push:
