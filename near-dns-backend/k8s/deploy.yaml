@@ -1,26 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: near-dns-backend
+  name: near-dns-staging
   labels:
-    app: near-dns-backend
+    app: near-dns-staging
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: near-dns-backend
+      app: near-dns-staging
   template:
     metadata:
       labels:
-        app: near-dns-backend
+        app: near-dns-staging
     spec:
       containers:
-        - name: near-dns-backend
-          image: ghcr.io/kmjayadeep/near-dns/near-dns-backend:1738260824
+        - name: near-dns
+          image: ghcr.io/kmjayadeep/near-dns/near-dns-backend:1739037649
           imagePullPolicy: Always
           env:
-            - name: NODE_ENV
-              value: "production"
+            - name: ENV_TYPE
+              value: "staging"
+            - name: RECONCILE_INTERVAL
+              value: "60"
             - name: ADGUARD_PASSWORD
               valueFrom:
                 secretKeyRef:
