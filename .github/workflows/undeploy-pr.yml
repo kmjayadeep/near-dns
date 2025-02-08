@@ -1,4 +1,4 @@
-name: Undeploy staging
+name: Undeploy PR from Staging
 on:
   pull_request:
     types: [closed]

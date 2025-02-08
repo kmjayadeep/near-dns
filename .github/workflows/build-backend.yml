@@ -1,4 +1,4 @@
-name: Build and Push Docker Image with Timestamp Tag
+name: Build and Push Backend container
 
 on:
   push:

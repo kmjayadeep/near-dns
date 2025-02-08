@@ -1,17 +1,18 @@
-name: Deploy to staging
+name: Deploy PR to Staging
 on:
   pull_request:
     paths:
       - 'near-dns-contract/**'
-      - '.github/workflows/deploy-staging.yml'
+      - '.github/workflows/deploy-pr.yml'
       - '.github/workflows/test.yml'
 
 jobs:
   test:
     uses: ./.github/workflows/test.yml
 
-  deploy-staging:
-    name: Deploy to staging subaccount
+  deploy-pr-staging:
+    name: Deploy to staging PR subaccount
+    environment: staging
     defaults:
       run:
         shell: bash
