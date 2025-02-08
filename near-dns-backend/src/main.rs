@@ -1,17 +1,16 @@
 use near_api::{AccountId, Contract, Data, NetworkConfig};
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::collections::HashMap;
+
+mod adguard;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-struct DNSRecord {
+pub struct DNSRecord {
     owner: AccountId,
     a: String,
     aaaa: String,
 }
 
-async fn get_all_domains() -> Result<Vec<(String, DNSRecord)>, Box<dyn std::error::Error>> {
+async fn get_near_state() -> Result<Vec<(String, DNSRecord)>, Box<dyn std::error::Error>> {
     let network = NetworkConfig::testnet();
 
     let contract_id: AccountId = "near-dns-staging.testnet".parse().unwrap();
@@ -30,140 +29,30 @@ async fn get_all_domains() -> Result<Vec<(String, DNSRecord)>, Box<dyn std::erro
     Ok(result.data)
 }
 
-async fn list_records() -> Result<HashMap<String, String>, reqwest::Error> {
-    println!("Listing domains");
-    let url = "http://gatekeeper.cosmos.cboxlab.com/control/rewrite/list";
-    let adguard_password =
-        std::env::var("ADGUARD_PASSWORD").expect("Missing ADGUARD_PASSWORD env var");
-
-    let client = Client::new();
-    let response = client
-        .get(url)
-        .header("Content-Type", "application/json")
-        .basic_auth("admin", Option::from(adguard_password))
-        .send()
-        .await?;
-
-    let body: Vec<HashMap<String, String>> = response.json().await?;
-    println!("Got {} domains", body.len());
-
-    let mut records = HashMap::new();
-    for r in body {
-        let domain = r["domain"].as_str();
-        records.insert(domain.to_string(), r["answer"].to_string());
-    }
-
-    Ok(records)
-}
-
-async fn add_record(domain: String, answer: String) -> Result<(), reqwest::Error> {
-    println!("Adding record for {}, answer {}", domain, answer);
-    let url = "http://gatekeeper.cosmos.cboxlab.com/control/rewrite/add";
-    let adguard_password =
-        std::env::var("ADGUARD_PASSWORD").expect("Missing ADGUARD_PASSWORD env var");
-
-    let rewrite_rule = json!({
-        "domain": domain,
-        "answer": answer,
-    });
-
-    let client = Client::new();
-    let response = client
-        .post(url)
-        .header("Content-Type", "application/json")
-        .basic_auth("admin", Option::from(adguard_password))
-        .json(&rewrite_rule)
-        .send()
-        .await?;
-
-    if response.status().is_success() {
-        println!("Record added successfully");
-    } else {
-        println!("Failed to add record");
-    }
-
-    Ok(())
-}
-
-async fn update_record(
-    domain: String,
-    existing: String,
-    answer: String,
-) -> Result<(), reqwest::Error> {
-    println!("Updating record for {}, answer {}", domain, answer);
-    let url = "http://gatekeeper.cosmos.cboxlab.com/control/rewrite/update";
-    let adguard_password =
-        std::env::var("ADGUARD_PASSWORD").expect("Missing ADGUARD_PASSWORD env var");
-
-    let payload = json!({
-        "target": {
-            "domain": domain,
-            "answer": existing,
-        },
-        "update": {
-            "domain": domain,
-            "answer": answer,
-        }
-    });
-
-    println!("Payload: {}", payload);
-
-    let client = Client::new();
-    let _response = client
-        .put(url)
-        .header("Content-Type", "application/json")
-        .basic_auth("admin", Option::from(adguard_password))
-        .json(&payload)
-        .send()
-        .await?;
-
-    Ok(())
-}
-
-async fn run() {
-    let domains = get_all_domains().await.unwrap();
-    println!("Domains:");
+async fn reconcile_adguard() {
+    let domains = get_near_state().await.unwrap();
+    println!("Domains In NEAR:");
     for (name, record) in domains.clone() {
         println!("- Name: {}, A: {}, AAAA: {}", name, record.a, record.aaaa);
     }
-    println!("Domains in Adguard:");
-    let existing = list_records().await.unwrap();
-    for (name, record) in existing.clone() {
-        println!("- Name: {}, Record: {}", name, record);
-    }
-
-    // Update the DNS records
-    for (n, record) in domains {
-        let answer = if !record.a.is_empty() {
-            record.a.clone()
-        } else {
-            record.aaaa.clone()
-        };
-        let name = n + ".local";
-        if existing.contains_key(&name) {
-            if existing.get(&name).unwrap() == &answer {
-                println!("Record for {} is up to date", name);
-                continue;
-            }
-            let result =
-                update_record(name.clone(), existing.get(&name).unwrap().clone(), answer).await;
-            if result.is_err() {
-                println!("Failed to update record for {}", name);
-            }
-        } else {
-            let result = add_record(name.clone(), answer).await;
-            if result.is_err() {
-                println!("Failed to add record for {}", name);
-            }
-        }
-    }
+    adguard::reconcile(domains).await;
 }
 
 #[tokio::main]
 async fn main() {
     println!("Starting Near-DNS Backend");
+    let env_type = std::env::var("ENV_TYPE").expect("Missing ENV_TYPE env variable");
+    let reconcile_interval = std::env::var("RECONCILE_INTERVAL")
+        .expect("Missing RECONCILE_INTERVAL env variable")
+        .parse::<u64>()
+        .expect("RECONCILE_INTERVAL must be a valid number");
+
     loop {
-        run().await;
-        tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+        if env_type == "staging" {
+            reconcile_adguard().await;
+        } else {
+            panic!("Unknown ENV_TYPE: {}", env_type);
+        }
+        tokio::time::sleep(tokio::time::Duration::from_secs(reconcile_interval)).await;
     }
 }
