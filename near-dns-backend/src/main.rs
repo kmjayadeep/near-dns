@@ -29,7 +29,7 @@ async fn get_near_state() -> Result<Vec<(String, DNSRecord)>, Box<dyn std::error
     Ok(result.data)
 }
 
-async fn run() {
+async fn reconcile_adguard() {
     let domains = get_near_state().await.unwrap();
     println!("Domains In NEAR:");
     for (name, record) in domains.clone() {
@@ -41,8 +41,18 @@ async fn run() {
 #[tokio::main]
 async fn main() {
     println!("Starting Near-DNS Backend");
+    let env_type = std::env::var("ENV_TYPE").expect("Missing ENV_TYPE env variable");
+    let reconcile_interval = std::env::var("RECONCILE_INTERVAL")
+        .expect("Missing RECONCILE_INTERVAL env variable")
+        .parse::<u64>()
+        .expect("RECONCILE_INTERVAL must be a valid number");
+
     loop {
-        run().await;
-        tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+        if env_type == "staging" {
+            reconcile_adguard().await;
+        } else {
+            panic!("Unknown ENV_TYPE: {}", env_type);
+        }
+        tokio::time::sleep(tokio::time::Duration::from_secs(reconcile_interval)).await;
     }
 }
