@@ -20,7 +20,7 @@ jobs:
     permissions:
       pull-requests: write
     needs: [test]
-    runs-on: ubuntu-latest
+    runs-on: cosmos
     env:
       NEAR_CONTRACT_PR_STAGING_ACCOUNT_ID: gh-${{ github.event.number }}.${{ vars.NEAR_CONTRACT_STAGING_ACCOUNT_ID }}
 
