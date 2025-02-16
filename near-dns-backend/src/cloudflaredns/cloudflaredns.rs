@@ -2,6 +2,7 @@ use crate::DNSRecord;
 
 use reqwest::Client;
 use serde::Deserialize;
+use serde_json::json;
 use std::collections::HashMap;
 
 const CLOUDFLARE_API_URL: &str = "https://api.cloudflare.com/client/v4";
@@ -36,14 +37,14 @@ impl CloudflareAPI {
         }
     }
 
-    async fn list_records(self) -> Result<HashMap<String, String>, reqwest::Error> {
+    async fn list_records(&self) -> Result<HashMap<String, String>, reqwest::Error> {
         let url = format!("{}/zones/{}/dns_records", CLOUDFLARE_API_URL, self.zone_id);
 
         let response = self
             .client
             .get(url)
             .header("Content-Type", "application/json")
-            .bearer_auth(self.api_key)
+            .bearer_auth(self.api_key.clone())
             .send()
             .await?;
 
@@ -57,6 +58,38 @@ impl CloudflareAPI {
         }
 
         Ok(records)
+    }
+
+    async fn create_record(
+        &self,
+        name: String,
+        record_type: String,
+        content: String,
+    ) -> Result<(), reqwest::Error> {
+        let url = format!("{}/zones/{}/dns_records", CLOUDFLARE_API_URL, self.zone_id);
+
+        let record = json!({
+            "type": record_type,
+            "name": name,
+            "content": content,
+        });
+
+        let response = self
+            .client
+            .post(url)
+            .header("Content-Type", "application/json")
+            .bearer_auth(self.api_key.clone())
+            .json(&record)
+            .send()
+            .await?;
+
+        match response.error_for_status() {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                println!("Failed to create record: {:?}", e);
+                Err(e)
+            }
+        }
     }
 }
 
@@ -86,6 +119,10 @@ pub async fn reconcile(domains: Vec<(String, DNSRecord)>) {
         } else {
             // Create the record
             println!("Creating record for {}, content {}", name, content);
+            cloudflare_api
+                .create_record(name, record_type.to_string(), content)
+                .await
+                .unwrap();
         }
     }
 }
