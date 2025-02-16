@@ -42,12 +42,18 @@ where
     }
 }
 
-pub fn reconcile(domains: Vec<(String, DNSRecord)>) {
+pub fn reconcile(_domains: Vec<(String, DNSRecord)>) {
+
+    let api_key =
+        std::env::var("CLOUDFLARE_API_KEY").expect("Missing CLOUDFLARE_API_KEY env var");
+
+    let email = std::env::var("CLOUDFLARE_EMAIL").expect("Missing CLOUDFLARE_EMAIL env var");
+
     println!("Domains in Cloudflare:");
     let api_client = HttpApiClient::new(
         cloudflare::framework::auth::Credentials::UserAuthKey {
-            key: "your_api_key".to_string(),
-            email: "your_email@example.com".to_string(),
+            key: api_key,
+            email: email,
         },
         HttpApiClientConfig::default(),
         Environment::Production,
