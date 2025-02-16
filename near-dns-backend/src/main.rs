@@ -2,6 +2,7 @@ use near_api::{AccountId, Contract, Data, NetworkConfig};
 use serde::{Deserialize, Serialize};
 
 mod adguard;
+mod cloudflaredns;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DNSRecord {
@@ -38,6 +39,15 @@ async fn reconcile_adguard() {
     adguard::reconcile(domains).await;
 }
 
+async fn reconcile_cloudflare() {
+    let domains = get_near_state().await.unwrap();
+    println!("Domains In NEAR:");
+    for (name, record) in domains.clone() {
+        println!("- Name: {}, A: {}, AAAA: {}", name, record.a, record.aaaa);
+    }
+    cloudflaredns::reconcile(domains).await;
+}
+
 #[tokio::main]
 async fn main() {
     println!("Starting Near-DNS Backend");
@@ -48,10 +58,18 @@ async fn main() {
         .expect("RECONCILE_INTERVAL must be a valid number");
 
     loop {
-        if env_type == "staging" {
-            reconcile_adguard().await;
-        } else {
-            panic!("Unknown ENV_TYPE: {}", env_type);
+        match env_type.as_str() {
+            "staging" => {
+                println!("Reconciling Adguard");
+                reconcile_adguard().await;
+            }
+            "production" => {
+                println!("Reconciling Cloudflare");
+                reconcile_cloudflare().await;
+            }
+            _ => {
+                panic!("Unknown ENV_TYPE: {}", env_type);
+            }
         }
         tokio::time::sleep(tokio::time::Duration::from_secs(reconcile_interval)).await;
     }
