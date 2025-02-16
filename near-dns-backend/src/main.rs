@@ -1,6 +1,6 @@
 use near_api::{AccountId, Contract, Data, NetworkConfig};
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Runtime;
+use tokio::task;
 
 mod adguard;
 mod cloudflaredns;
@@ -46,10 +46,11 @@ async fn reconcile_cloudflare() {
     for (name, record) in domains.clone() {
         println!("- Name: {}, A: {}, AAAA: {}", name, record.a, record.aaaa);
     }
-    let rt = Runtime::new().unwrap();
-    rt.block_on(async {
+    task::spawn_blocking(move || {
         cloudflaredns::reconcile(domains);
-    });
+    })
+    .await
+    .unwrap();
 }
 
 #[tokio::main]
