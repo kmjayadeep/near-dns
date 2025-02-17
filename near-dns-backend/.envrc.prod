@@ -1,0 +1,4 @@
+export ENV_TYPE=production
+export RECONCILE_INTERVAL=60
+export CLOUDFLARE_API_KEY=$(pass crypto/near-dns/prod/cloudflare-token)
+export CLOUDFLARE_ZONE_ID=$(pass crypto/near-dns/prod/cloudflare-zone-id) 
