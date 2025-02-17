@@ -5,4 +5,5 @@ namespace: near-dns
 
 resources:
   - ./deploy.yaml
+  - ./deploy-prod.yaml
   - ./secret-sealed.yaml

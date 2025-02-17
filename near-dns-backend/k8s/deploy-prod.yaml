@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: near-dns-staging
+  name: near-dns-prod
   labels:
-    app: near-dns-staging
+    app: near-dns-prod
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: near-dns-staging
+      app: near-dns-prod
   template:
     metadata:
       labels:
-        app: near-dns-staging
+        app: near-dns-prod
     spec:
       containers:
         - name: near-dns
@@ -20,11 +20,16 @@ spec:
           imagePullPolicy: Always
           env:
             - name: ENV_TYPE
-              value: "staging"
+              value: "production"
             - name: RECONCILE_INTERVAL
-              value: "60"
-            - name: ADGUARD_PASSWORD
+              value: "600"
+            - name: CLOUDFLARE_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: near-dns-secret
-                  key: adguard_password
+                  key: cloudflare_api_key
+            - name: CLOUDFLARE_ZONE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: near-dns-secret
+                  key: cloudflare_zone_id
