@@ -1,0 +1,35 @@
+name: app1-workflow1-vault-secrets
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '*.md'
+jobs:
+  get-secret:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    runs-on: self-hosted
+    name: get-secret
+    steps:
+      - name: Debug JWT
+        run: |
+          echo $ACTIONS_ID_TOKEN_REQUEST_URL
+          curl -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+               $ACTIONS_ID_TOKEN_REQUEST_URL | jq '.'
+
+      - name: Import Secrets
+        id: import-secrets
+        uses: hashicorp/vault-action@v2
+        with:
+          url: "https://vault.cosmos.cboxlab.com"
+          role: auth.jwt.near-dns
+          method: jwt
+          secrets: |
+              homelab/kv/data/near-dns/test key1 | TEST ;
+      - name: print
+        run: |
+          echo "${{ steps.import-secrets.outputs.TEST }}"
+
