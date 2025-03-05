@@ -10,6 +10,9 @@ jobs:
   test:
     uses: ./.github/workflows/test.yml
 
+  build:
+    uses: ./.github/workflows/build.yml
+
   deploy-pr-staging:
     name: Deploy to staging PR subaccount
     environment: staging

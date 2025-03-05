@@ -1,0 +1,36 @@
+name: Build WASM
+on:
+  workflow_call:
+
+jobs:
+  build:
+    name: Build Contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+            ./near-dns-contract/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cargo-near CLI
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/download/cargo-near-v0.13.2/cargo-near-installer.sh | sh
+
+      - name: Build the Project
+        run: cargo near build reproducible-wasm
+        working-directory: ./near-dns-contract
+
+      - name: Upload contract WASM
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract_wasm
+          path: ./near-dns-contract/target/near/near_dns.wasm 
+
