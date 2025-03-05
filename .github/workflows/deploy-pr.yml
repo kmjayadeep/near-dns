@@ -16,14 +16,12 @@ jobs:
   deploy-pr-staging:
     name: Deploy to staging PR subaccount
     environment: staging
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./near-dns-contract
     permissions:
       pull-requests: write
-    needs: [test]
-    runs-on: ubuntu-latest
+    needs:
+    - build
+    - test
+    runs-on: self-hosted
     env:
       NEAR_CONTRACT_PR_STAGING_ACCOUNT_ID: gh-${{ github.event.number }}.${{ vars.NEAR_CONTRACT_STAGING_ACCOUNT_ID }}
 
@@ -31,8 +29,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: contract_wasm
+          path: result
+
       - name: Install near CLI
         run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/download/v0.11.1/near-cli-rs-installer.sh | sh
+
+      - name: Add $HOME/.cargo/bin to PATH
+        run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
       - name: Create staging account
         if: github.event.action == 'opened' || github.event.action == 'reopened'
         run: |
@@ -45,15 +52,9 @@ jobs:
               --signer-private-key "${{ secrets.NEAR_CONTRACT_STAGING_ACCOUNT_PRIVATE_KEY }}" \
             send
 
-      - name: Install cargo-near CLI
-        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/download/cargo-near-v0.13.2/cargo-near-installer.sh | sh
-
-      - name: Build Contract WASM
-        run: cargo near build reproducible-wasm
-
       - name: Deploy to staging
         run: |
-          near contract deploy "${{ env.NEAR_CONTRACT_PR_STAGING_ACCOUNT_ID }}" use-file ./target/near/near_dns.wasm \
+          near contract deploy "${{ env.NEAR_CONTRACT_PR_STAGING_ACCOUNT_ID }}" use-file ./result/near_dns.wasm \
             without-init-call \
             network-config "${{ vars.NEAR_CONTRACT_STAGING_NETWORK }}" \
             sign-with-plaintext-private-key \
