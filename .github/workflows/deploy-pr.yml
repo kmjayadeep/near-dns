@@ -18,6 +18,8 @@ jobs:
     environment: staging
     permissions:
       pull-requests: write
+      contents: read
+      id-token: write
     needs:
     - build
     - test
@@ -34,6 +36,17 @@ jobs:
           name: contract_wasm
           path: result
 
+      - name: Vault Secrets
+        id: vault-secrets
+        uses: hashicorp/vault-action@v2
+        with:
+          url: "https://vault.cosmos.cboxlab.com"
+          role: auth.jwt.near-dns
+          method: jwt
+          secrets: |
+              homelab/kv/data/near-dns/staging account-privatekey | ACCOUNT_PRIVATE_KEY ;
+              homelab/kv/data/near-dns/staging account-publickey | ACCOUNT_PUBLIC_KEY ;
+
       - name: Install near CLI
         run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/download/v0.11.1/near-cli-rs-installer.sh | sh
 
@@ -44,12 +57,12 @@ jobs:
         if: github.event.action == 'opened' || github.event.action == 'reopened'
         run: |
           near account create-account fund-myself "${{ env.NEAR_CONTRACT_PR_STAGING_ACCOUNT_ID }}" '2 NEAR' \
-            use-manually-provided-public-key "${{ vars.NEAR_CONTRACT_STAGING_ACCOUNT_PUBLIC_KEY }}" \
+            use-manually-provided-public-key "${{ steps.vault-secrets.outputs.ACCOUNT_PUBLIC_KEY }}" \
             sign-as "${{ vars.NEAR_CONTRACT_STAGING_ACCOUNT_ID }}" \
             network-config "${{ vars.NEAR_CONTRACT_STAGING_NETWORK }}" \
             sign-with-plaintext-private-key \
-              --signer-public-key "${{ vars.NEAR_CONTRACT_STAGING_ACCOUNT_PUBLIC_KEY }}" \
-              --signer-private-key "${{ secrets.NEAR_CONTRACT_STAGING_ACCOUNT_PRIVATE_KEY }}" \
+              --signer-public-key "${{ steps.vault-secrets.outputs.ACCOUNT_PUBLIC_KEY }}" \
+              --signer-private-key "${{ steps.vault-secrets.outputs.ACCOUNT_PRIVATE_KEY }}" \
             send
 
       - name: Deploy to staging
@@ -59,7 +72,7 @@ jobs:
             network-config "${{ vars.NEAR_CONTRACT_STAGING_NETWORK }}" \
             sign-with-plaintext-private-key \
               --signer-public-key "${{ vars.NEAR_CONTRACT_STAGING_ACCOUNT_PUBLIC_KEY }}" \
-              --signer-private-key "${{ secrets.NEAR_CONTRACT_STAGING_ACCOUNT_PRIVATE_KEY }}" \
+              --signer-private-key "${{ steps.vault-secrets.outputs.ACCOUNT_PRIVATE_KEY }}" \
             send
 
       - name: Comment on pull request
