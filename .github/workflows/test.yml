@@ -3,41 +3,50 @@ on:
   workflow_call:
 
 jobs:
-  check-and-test:
-    name: Lint, Format, and Test
+  code-formatting:
+    name: Code Formatting
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./near-dns-contract
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - run: cargo fmt --check
 
-      - name: Cache Rust dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/registry
-            ~/.cargo/git
-            ./near-dns-contract/target
-          key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-
+  code-linter:
+    name: Code Linter
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./near-dns-contract
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Install cargo-near CLI
-        run: |
-          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/download/cargo-near-v0.13.2/cargo-near-installer.sh | sh
-
-      - name: Run Cargo Formatting
-        run: cargo fmt --check
-        working-directory: ./near-dns-contract
-
-      - name: Build the Project
+        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/download/cargo-near-v0.13.2/cargo-near-installer.sh | sh
+      - name: Run cargo near build
         run: cargo near build non-reproducible-wasm
-        working-directory: ./near-dns-contract
-
-      - name: Run Cargo Clippy
+      - name: Run cargo clippy
         run: |
           rustup component add clippy
           cargo clippy --all-features --workspace --tests -- --warn clippy::all --warn clippy::nursery
-        working-directory: ./near-dns-contract
 
-      - name: Run Cargo Test
-        run: cargo test
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
         working-directory: ./near-dns-contract
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install cargo-near CLI
+        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/download/cargo-near-v0.13.2/cargo-near-installer.sh | sh
+      - name: Run cargo near build
+        run: cargo near build non-reproducible-wasm
+      - name: Run cargo test
+        run: cargo test

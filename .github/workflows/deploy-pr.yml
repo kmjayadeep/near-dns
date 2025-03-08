@@ -71,7 +71,7 @@ jobs:
             without-init-call \
             network-config "${{ vars.NEAR_CONTRACT_STAGING_NETWORK }}" \
             sign-with-plaintext-private-key \
-              --signer-public-key "${{ vars.NEAR_CONTRACT_STAGING_ACCOUNT_PUBLIC_KEY }}" \
+              --signer-public-key "${{ steps.vault-secrets.outputs.ACCOUNT_PUBLIC_KEY }}" \
               --signer-private-key "${{ steps.vault-secrets.outputs.ACCOUNT_PRIVATE_KEY }}" \
             send
 
