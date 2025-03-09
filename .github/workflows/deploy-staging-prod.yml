@@ -51,7 +51,8 @@ jobs:
 
       - name: Deploy to staging
         run: |
-          cargo near deploy build-reproducible-wasm "${{ vars.NEAR_CONTRACT_STAGING_ACCOUNT_ID }}" \
+          near contract deploy "${{ vars.NEAR_CONTRACT_STAGING_ACCOUNT_ID }}" \
+            use-file ./result/near_dns.wasm \
             without-init-call \
             network-config "${{ vars.NEAR_CONTRACT_STAGING_NETWORK }}" \
             sign-with-plaintext-private-key \
@@ -98,7 +99,8 @@ jobs:
 
       - name: Deploy to production
         run: |
-          cargo near deploy build-reproducible-wasm "${{ vars.NEAR_CONTRACT_PRODUCTION_ACCOUNT_ID }}" \
+          near contract deploy "${{ vars.NEAR_CONTRACT_PRODUCTION_ACCOUNT_ID }}" \
+            use-file ./result/near_dns.wasm \
             without-init-call \
             network-config "${{ vars.NEAR_CONTRACT_PRODUCTION_NETWORK }}" \
             sign-with-plaintext-private-key \
