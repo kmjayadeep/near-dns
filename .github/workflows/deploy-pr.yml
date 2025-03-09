@@ -42,7 +42,7 @@ jobs:
 
       - name: Vault Secrets
         id: vault-secrets
-        uses: hashicorp/vault-action@v2
+        uses: hashicorp/vault-action@v3
         with:
           url: "https://vault.cosmos.cboxlab.com"
           role: auth.jwt.near-dns
