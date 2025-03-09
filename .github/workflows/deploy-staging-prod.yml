@@ -10,52 +10,98 @@ jobs:
   test:
     uses: ./.github/workflows/test.yml
 
+  build:
+    uses: ./.github/workflows/build.yml
+
   deploy-staging:
     environment: staging
     name: Deploy to staging
-    needs: [test]
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./near-dns-contract
+    runs-on: self-hosted
+    needs:
+    - build
+    - test
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Install cargo-near CLI
-        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/download/cargo-near-v0.13.2/cargo-near-installer.sh | sh
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: contract_wasm
+          path: result
+
+      - name: Vault Secrets
+        id: vault-secrets
+        uses: hashicorp/vault-action@v2
+        with:
+          url: "https://vault.cosmos.cboxlab.com"
+          role: auth.jwt.near-dns
+          method: jwt
+          secrets: |
+              homelab/kv/data/near-dns/staging account-privatekey | ACCOUNT_PRIVATE_KEY ;
+              homelab/kv/data/near-dns/staging account-publickey | ACCOUNT_PUBLIC_KEY ;
+
+      - name: Install near CLI
+        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/download/v0.11.1/near-cli-rs-installer.sh | sh
+
+      - name: Add $HOME/.cargo/bin to PATH
+        run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
       - name: Deploy to staging
         run: |
           cargo near deploy build-reproducible-wasm "${{ vars.NEAR_CONTRACT_STAGING_ACCOUNT_ID }}" \
             without-init-call \
             network-config "${{ vars.NEAR_CONTRACT_STAGING_NETWORK }}" \
             sign-with-plaintext-private-key \
-              --signer-public-key "${{ vars.NEAR_CONTRACT_STAGING_ACCOUNT_PUBLIC_KEY }}" \
-              --signer-private-key "${{ secrets.NEAR_CONTRACT_STAGING_ACCOUNT_PRIVATE_KEY }}" \
+              --signer-public-key "${{ steps.vault-secrets.outputs.ACCOUNT_PUBLIC_KEY }}" \
+              --signer-private-key "${{ steps.vault-secrets.outputs.ACCOUNT_PRIVATE_KEY }}" \
             send
 
   deploy-prod:
     environment: prod
     name: Deploy to production
+    runs-on: self-hosted
     needs:
+    - build
     - test
     - deploy-staging
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./near-dns-contract
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Install cargo-near CLI
-        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/download/cargo-near-v0.13.2/cargo-near-installer.sh | sh
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: contract_wasm
+          path: result
+
+      - name: Vault Secrets
+        id: vault-secrets
+        uses: hashicorp/vault-action@v2
+        with:
+          url: "https://vault.cosmos.cboxlab.com"
+          role: auth.jwt.near-dns
+          method: jwt
+          secrets: |
+              homelab/kv/data/near-dns/prod account-privatekey | ACCOUNT_PRIVATE_KEY ;
+              homelab/kv/data/near-dns/prod account-publickey | ACCOUNT_PUBLIC_KEY ;
+
+      - name: Install near CLI
+        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/download/v0.11.1/near-cli-rs-installer.sh | sh
+
+      - name: Add $HOME/.cargo/bin to PATH
+        run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
       - name: Deploy to production
         run: |
           cargo near deploy build-reproducible-wasm "${{ vars.NEAR_CONTRACT_PRODUCTION_ACCOUNT_ID }}" \
             without-init-call \
             network-config "${{ vars.NEAR_CONTRACT_PRODUCTION_NETWORK }}" \
             sign-with-plaintext-private-key \
-              --signer-public-key "${{ vars.NEAR_CONTRACT_PRODUCTION_ACCOUNT_PUBLIC_KEY }}" \
-              --signer-private-key "${{ secrets.NEAR_CONTRACT_PRODUCTION_ACCOUNT_PRIVATE_KEY }}" \
+              --signer-public-key "${{ steps.vault-secrets.outputs.ACCOUNT_PUBLIC_KEY }}" \
+              --signer-private-key "${{ steps.vault-secrets.outputs.ACCOUNT_PRIVATE_KEY }}" \
             send
