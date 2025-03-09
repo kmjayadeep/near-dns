@@ -6,6 +6,10 @@ on:
       - 'near-dns-contract/**'
       - '.github/workflows/deploy-staging-prod.yml'
 
+concurrency:
+  group: once
+  cancel-in-progress: true
+
 jobs:
   test:
     uses: ./.github/workflows/test.yml

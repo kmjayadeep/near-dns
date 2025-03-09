@@ -8,6 +8,10 @@ on:
       - 'near-dns-backend/**'
       - '.github/workflows/build-backend.yml'
 
+concurrency:
+  group: once
+  cancel-in-progress: true
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
