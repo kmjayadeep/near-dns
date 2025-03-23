@@ -21,10 +21,11 @@ struct ListDNSResponse {
 
 #[derive(Deserialize, Debug)]
 struct DNSResult {
-    id: String,
+    // TODO: Use remaining fields
+    _id: String,
     name: String,
     #[serde(rename = "type")]
-    record_type: String,
+    _record_type: String,
     content: String,
 }
 
