@@ -22,7 +22,7 @@ struct ListDNSResponse {
 #[derive(Deserialize, Debug)]
 struct DNSResult {
     // TODO: Use remaining fields
-    _id: String,
+    id: String,
     name: String,
     #[serde(rename = "type")]
     _record_type: String,
@@ -100,7 +100,8 @@ pub async fn reconcile(domains: Vec<(String, DNSRecord)>) {
     let zone_id = std::env::var("CLOUDFLARE_ZONE_ID").expect("Missing CLOUDFLARE_ZONE_ID env var");
 
     let cloudflare_api = CloudflareAPI::new(api_key, zone_id);
-    let existing = cloudflare_api.list_records().await.unwrap();
+    let existing = cloudflare_api.list_records().await;
+    let Ok(existing) = existing else { eprintln!("ERROR {}", existing.err().unwrap()); return; };
     println!("Domains in Cloudflare:");
     for (domain, record) in domains {
         println!("{}: {}, {}", domain, record.a, record.aaaa);
